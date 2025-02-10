@@ -12,50 +12,127 @@ public class AccountManagement{
     static Account[] accounts = new Account[10]; // Limited to 10 accounts for simplicity
     static int accountCount = 0;  // To keep track of the number of created accounts
 
-    public static void createAccount(Scanner scanner){
-
+    public static void createAccount(Scanner scanner) {
         System.out.println(yellow + "===============| CREATING ACCOUNT |===============" + reset);
 
-        if (accountCount < accounts.length) {
-            System.out.println("1. CHECKING ACCOUNT");
-            System.out.println("2. SAVING ACCOUNT");
-            System.out.print("Which account that you want to create?? : ");
-            int type = scanner.nextInt();
-            scanner.nextLine();
-
-            // Generate a random account number
-            Random random = new Random();
-            int accountNumber = 100000 + random.nextInt(900000); // Generates a 6-digit number
-
-            System.out.print("Enter username: ");
-            String userName = scanner.nextLine();
-
-            System.out.print("Enter date of birth (DD/MM/YYYY): ");
-            String dateOfBirth = scanner.nextLine();
-
-            System.out.print("Enter gender: ");
-            String gender = scanner.nextLine();
-
-            System.out.print("Enter phone number: ");
-            String phoneNumber = scanner.nextLine();
-
-            double balance = 0; // Initial balance set to 0
-
-            Account newAccount;
-            if (type == 1) {
-                newAccount = new CheckingAccount(accountNumber, userName, dateOfBirth, gender, phoneNumber, balance);
-            } else {
-                newAccount = new SavingAccount(accountNumber, userName, dateOfBirth, gender, phoneNumber, balance);
-            }
-
-            accounts[accountCount++] = newAccount;
-            currentAccount = newAccount;
-            System.out.println(green + "Account created successfully! Your account number is: " + accountNumber + reset);
-        } else {
+        if (accountCount >= accounts.length) {
             System.out.println(red + "Account limit reached!" + reset);
+            return;
         }
 
+        int type;
+        while (true) {
+            System.out.println("1. CHECKING ACCOUNT");
+            System.out.println("2. SAVING ACCOUNT");
+            System.out.print("Which account do you want to create? (1 - 2) : ");
+            type = scanner.nextInt();
+            scanner.nextLine();
+            if (type == 1 || type == 2) break;
+            System.out.println(red + "Invalid choice! Please enter 1 or 2." + reset);
+        }
+
+        // Generate a random 6-digit account number
+        Random random = new Random();
+        int accountNumber = 100000 + random.nextInt(900000);
+
+        // Validate Username (only letters, not empty)
+        String userName;
+        while (true) {
+            System.out.print("Enter Username: ");
+            userName = scanner.nextLine().trim();
+            if (!userName.matches("[a-zA-Z ]+") || userName.isEmpty()) {
+                System.out.println(red + "Invalid Username! Must contain only letters and cannot be empty." + reset);
+            } else {
+                break;
+            }
+        }
+
+        // Validate Date of Birth (Cannot be empty)
+        String dateOfBirth;
+        while (true) {
+            System.out.print("Enter Date of Birth (DD/MM/YYYY): ");
+            dateOfBirth = scanner.nextLine().trim();
+            if (!isValidDate(dateOfBirth)) {
+                System.out.println(red + "Invalid Date of Birth! Please enter a valid date (DD/MM/YYYY)." + reset);
+            } else {
+                break;
+            }
+        }
+
+        // Validate Gender (Cannot be empty)
+        String gender;
+        while (true) {
+            System.out.print("Enter Gender: ");
+            gender = scanner.nextLine().trim();
+            if (gender.isEmpty()) {
+                System.out.println(red + "Gender cannot be empty!" + reset);
+            } else {
+                break;
+            }
+        }
+
+        // Validate Phone Number (only digits, not empty)
+        String phoneNumber;
+        while (true) {
+            System.out.print("Enter Phone Number: ");
+            phoneNumber = scanner.nextLine().trim();
+            if (!phoneNumber.matches("\\d+") || phoneNumber.isEmpty()) {
+                System.out.println(red + "Invalid Phone Number! Must contain only numbers and cannot be empty." + reset);
+            } else {
+                break;
+            }
+        }
+
+        double balance = 0.0;
+
+        Account newAccount = (type == 1)
+                ? new CheckingAccount(accountNumber, userName, dateOfBirth, gender, phoneNumber, balance)
+                : new SavingAccount(accountNumber, userName, dateOfBirth, gender, phoneNumber, balance);
+
+        accounts[accountCount++] = newAccount;
+        currentAccount = newAccount;
+
+        System.out.println(green + "Account created successfully! Your account number is: " + accountNumber + reset);
     }
+
+    public static boolean isValidDate(String dateOfBirth) {
+        // Regular expression for DD/MM/YYYY format
+        String datePattern = "^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/\\d{4}$";
+
+        // Check if the input matches the pattern
+        if (!dateOfBirth.matches(datePattern)) {
+            return false; // Invalid format
+        }
+
+        // Split into day, month, and year
+        String[] parts = dateOfBirth.split("/");
+        int day = Integer.parseInt(parts[0]);
+        int month = Integer.parseInt(parts[1]);
+        int year = Integer.parseInt(parts[2]);
+
+        // Check if the year is valid (adjust range if needed)
+        if (year < 1900 || year > 2025) {
+            return false;
+        }
+
+        // Days in each month (default for a non-leap year)
+        int[] daysInMonth = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+
+        // Leap year check
+        if (isLeapYear(year)) {
+            daysInMonth[1] = 29; // February has 29 days in a leap year
+        }
+
+        // Validate day against the month's days limit
+        return day > 0 && day <= daysInMonth[month - 1];
+    }
+
+    // Leap Year Checker
+    public static boolean isLeapYear(int year) {
+        return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+    }
+
+
     public static void depositMoney(Scanner scanner){
         if (currentAccount == null) {
             System.out.println(red + "No account created yet! Please create an account first." + reset);
@@ -146,7 +223,7 @@ public class AccountManagement{
 
         System.out.println(yellow + "===============| ALL ACCOUNT INFORMATION |===============" + reset);
         for (int i = 0; i < accountCount; i++) {
-            accounts[i].displayAccountInfo(); // Display each account's details
+            accounts[i].displayAccountInfo();
         }
     }
 
@@ -172,7 +249,6 @@ public class AccountManagement{
             return;
         }
 
-        // Confirm deletion
         System.out.print("Are you sure you want to delete this account? (Y/N): ");
         String confirm = scanner.nextLine();
 
